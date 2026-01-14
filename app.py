@@ -10,13 +10,17 @@ from datetime import datetime, timedelta
 app = Flask(__name__)
 app.config.from_object(Config)
 
+# Ensure directories exist
+os.makedirs(app.config["MASTER_PDF_DIR"], exist_ok=True)
+os.makedirs(app.config["OUTPUT_DIR"], exist_ok=True)
+
+# Update constants
 BASE_DIR = app.config["BASE_DIR"]
 MASTER_PDF_DIR = app.config["MASTER_PDF_DIR"]
 OUTPUT_DIR = app.config["OUTPUT_DIR"]
 DB_PATH = app.config["DB_PATH"]
 
-os.makedirs(OUTPUT_DIR, exist_ok=True)
-os.makedirs(MASTER_PDF_DIR, exist_ok=True)
+
 
 # ------------------ DATABASE ------------------
 def init_db():

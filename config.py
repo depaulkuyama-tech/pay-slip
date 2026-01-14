@@ -7,15 +7,20 @@ class Config:
     SECRET_KEY = os.getenv("FLASK_SECRET_KEY", "change_me_in_production")
     BASE_DIR = os.getenv("BASE_DIR", os.path.dirname(os.path.abspath(__file__)))
 
-    # Folder where all master PDFs for pay periods are stored
-    MASTER_PDF_DIR = os.path.join(BASE_DIR, "Master_PDFs")
+    # Detect if running on Render
+    ON_RENDER = os.environ.get("RENDER") == "true"
 
-    # Output folder for extracted employee PDFs
-    OUTPUT_DIR = os.path.join(BASE_DIR, "output")
+    if ON_RENDER:
+        # Use /tmp directories on Render (writable)
+        MASTER_PDF_DIR = "/tmp/Master_PDFs"
+        OUTPUT_DIR = "/tmp/output"
+        DB_PATH = "/tmp/users.db"
+    else:
+        # Local folders
+        MASTER_PDF_DIR = os.path.join(BASE_DIR, "Master_PDFs")
+        OUTPUT_DIR = os.path.join(BASE_DIR, "output")
+        DB_PATH = os.path.join(BASE_DIR, "users.db")
 
-    # Database path
-    DB_PATH = os.path.join(BASE_DIR, "users.db")
-
-# Ensure the output folder exists
+# Ensure directories exist
+os.makedirs(Config.MASTER_PDF_DIR, exist_ok=True)
 os.makedirs(Config.OUTPUT_DIR, exist_ok=True)
-os.makedirs(Config.MASTER_PDF_DIR, exist_ok=True)  # <-- ensure Master_PDFs exists
