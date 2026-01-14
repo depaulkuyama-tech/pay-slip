@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block title %}Payslip Portal{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+
+            <!-- Card -->
+            <div class="card shadow-lg border-0">
+                
+                <!-- Header with Logo -->
+                <div class="card-header text-center bg-success text-white py-4 rounded-top position: sticky-header">
+                    <img src="{{ url_for('static', filename='logo.png') }}" alt="Department Logo" width="120" class="mb-2">
+                    <h4 class="mb-1">Department of Defence</h4>
+                    <small>Online Payslip Portal</small>
+                </div>
+
+                <!-- Card Body -->
+                <div class="card-body p-4">
+
+                    <!-- User Info -->
+                    <div class="mb-4 text-center">
+                        <h5 class="mb-1">Welcome, {{ username }}</h5>
+                        <p class="text-muted mb-0">Employee Number: <strong>{{ employee_number }}</strong></p>
+                        <p class="text-muted mb-0">Department: <strong>{{ department or "N/A" }}</strong></p>
+                    </div>
+
+                    <hr>
+
+                    <!-- Collapsible Download Payslip Section -->
+                    <div class="mb-3">
+                        <button class="btn btn-success w-100" type="button" data-bs-toggle="collapse" data-bs-target="#downloadPayslip" aria-expanded="false" aria-controls="downloadPayslip">
+                            Select Your Payslip
+                        </button>
+
+                        <div class="collapse mt-3" id="downloadPayslip">
+                            <div class="accordion" id="payslipAccordion">
+                                {% set years = {} %}
+                                {% for period in pay_periods %}
+                                    {% set year = period.pay_date.split('-')[-1] %}
+                                    {% if year not in years %}
+                                        {% set years = years.update({year: []}) or years %}
+                                    {% endif %}
+                                    {% set _ = years[year].append(period) %}
+                                {% endfor %}
+
+                                {% for year, periods in years.items() %}
+                                    <div class="accordion-item">
+                                        <h2 class="accordion-header" id="heading{{ year }}">
+                                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ year }}" aria-expanded="false" aria-controls="collapse{{ year }}">
+                                                {{ year }}
+                                            </button>
+                                        </h2>
+                                        <div id="collapse{{ year }}" class="accordion-collapse collapse" aria-labelledby="heading{{ year }}" data-bs-parent="#payslipAccordion">
+                                            <div class="accordion-body">
+                                                <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-2">
+                                                    {% set months = {} %}
+                                                    {% for period in periods %}
+                                                        {% set month = period.pay_date.split('-')[1] %}
+                                                        {% if month not in months %}
+                                                            {% set months = months.update({month: []}) or months %}
+                                                        {% endif %}
+                                                        {% set _ = months[month].append(period) %}
+                                                    {% endfor %}
+
+                                                    {% for month, month_periods in months.items() %}
+                                                        <div class="col-12 mb-2">
+                                                            <strong>{{ month }}</strong>
+                                                            <div class="d-flex flex-wrap gap-2 mt-1">
+                                                                {% for p in month_periods %}
+                                                                    <form method="POST" style="display:inline-block;">
+                                                                        <button type="submit" name="pay_date" value="{{ p.pay_date }}"
+                                                                            class="btn btn-sm {% if not p.available %}btn-outline-secondary disabled{% else %}btn-success{% endif %}"
+                                                                            {% if not p.available %}title="Not available yet"{% endif %}>
+                                                                            {{ p.pay_date }}
+                                                                        </button>
+                                                                    </form>
+                                                                {% endfor %}
+                                                            </div>
+                                                        </div>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payslip History -->
+<h5 class="mb-3 mt-4">Previously Downloaded Payslips</h5>
+<ul class="list-group mb-4">
+    {% if payslip_history %}
+        {% for payslip in payslip_history|sort(attribute='pay_date', reverse=True) %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span>{{ payslip.pay_date }}</span>
+                <div class="d-flex gap-2">
+                    <!-- Download Button -->
+                    <a href="{{ url_for('download_payslip', filename=payslip.filename) }}" 
+                       class="btn btn-outline-success btn-sm">Download</a>
+
+                    <!-- Delete Button -->
+                    <form method="POST" action="{{ url_for('delete_payslip', filename=payslip.filename) }}" style="display:inline-block;">
+                        <button type="submit" class="btn btn-outline-danger btn-sm" 
+                                onclick="return confirm('Are you sure you want to delete this payslip?');">
+                            Delete
+                        </button>
+                    </form>
+                </div>
+            </li>
+        {% endfor %}
+    {% else %}
+        <li class="list-group-item text-center text-muted">No previously downloaded payslips.</li>
+    {% endif %}
+</ul>
+
+
+                    <!-- Quick Links -->
+                    <div class="d-flex justify-content-between mb-3">
+                        <a href="{{ url_for('change_password') }}" class="btn btn-outline-warning btn-sm">Change Password</a>
+                        <a href="{{ url_for('contact_hr') }}" class="btn btn-outline-info btn-sm">Contact HR</a>
+                    </div>
+
+                    <!-- Logout -->
+                    <div class="text-center mt-3">
+                        <a href="{{ url_for('logout') }}" class="text-decoration-none text-danger">Logout</a>
+                    </div>
+
+                </div>
+
+                <!-- Card Footer -->
+                <div class="card-footer text-center text-muted bg-light">
+                    &copy; 2026 Department of Defence
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+{% endblock %}
