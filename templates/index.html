@@ -4,133 +4,233 @@
 {% block content %}
 <div class="container py-5">
     <div class="row justify-content-center">
-        <div class="col-md-10 col-lg-8">
+        <div class="col-lg-10">
 
-            <!-- Card -->
-            <div class="card shadow-lg border-0">
-                
-                <!-- Header with Logo -->
-                <div class="card-header text-center bg-success text-white py-4 rounded-top position: sticky-header">
-                    <img src="{{ url_for('static', filename='logo.png') }}" alt="Department Logo" width="120" class="mb-2">
-                    <h4 class="mb-1">Department of Defence</h4>
-                    <small>Online Payslip Portal</small>
-                </div>
+            <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
 
-                <!-- Card Body -->
-                <div class="card-body p-4">
+                <!-- Header with Logo + Mobile Hamburger -->
+                <div class="card-header bg-success text-white py-4 rounded-top d-flex flex-column flex-md-row justify-content-center align-items-center gap-3 position-relative">
 
-                    <!-- User Info -->
-                    <div class="mb-4 text-center">
-                        <h5 class="mb-1">Welcome, {{ username }}</h5>
-                        <p class="text-muted mb-0">Employee Number: <strong>{{ employee_number }}</strong></p>
-                        <p class="text-muted mb-0">Department: <strong>{{ department or "N/A" }}</strong></p>
-                    </div>
-
-                    <hr>
-
-                    <!-- Collapsible Download Payslip Section -->
-                    <div class="mb-3">
-                        <button class="btn btn-success w-100" type="button" data-bs-toggle="collapse" data-bs-target="#downloadPayslip" aria-expanded="false" aria-controls="downloadPayslip">
-                            Select Your Payslip
-                        </button>
-
-                        <div class="collapse mt-3" id="downloadPayslip">
-                            <div class="accordion" id="payslipAccordion">
-                                {% set years = {} %}
-                                {% for period in pay_periods %}
-                                    {% set year = period.pay_date.split('-')[-1] %}
-                                    {% if year not in years %}
-                                        {% set years = years.update({year: []}) or years %}
-                                    {% endif %}
-                                    {% set _ = years[year].append(period) %}
-                                {% endfor %}
-
-                                {% for year, periods in years.items() %}
-                                    <div class="accordion-item">
-                                        <h2 class="accordion-header" id="heading{{ year }}">
-                                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ year }}" aria-expanded="false" aria-controls="collapse{{ year }}">
-                                                {{ year }}
-                                            </button>
-                                        </h2>
-                                        <div id="collapse{{ year }}" class="accordion-collapse collapse" aria-labelledby="heading{{ year }}" data-bs-parent="#payslipAccordion">
-                                            <div class="accordion-body">
-                                                <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-2">
-                                                    {% set months = {} %}
-                                                    {% for period in periods %}
-                                                        {% set month = period.pay_date.split('-')[1] %}
-                                                        {% if month not in months %}
-                                                            {% set months = months.update({month: []}) or months %}
-                                                        {% endif %}
-                                                        {% set _ = months[month].append(period) %}
-                                                    {% endfor %}
-
-                                                    {% for month, month_periods in months.items() %}
-                                                        <div class="col-12 mb-2">
-                                                            <strong>{{ month }}</strong>
-                                                            <div class="d-flex flex-wrap gap-2 mt-1">
-                                                                {% for p in month_periods %}
-                                                                    <form method="POST" style="display:inline-block;">
-                                                                        <button type="submit" name="pay_date" value="{{ p.pay_date }}"
-                                                                            class="btn btn-sm {% if not p.available %}btn-outline-secondary disabled{% else %}btn-success{% endif %}"
-                                                                            {% if not p.available %}title="Not available yet"{% endif %}>
-                                                                            {{ p.pay_date }}
-                                                                        </button>
-                                                                    </form>
-                                                                {% endfor %}
-                                                            </div>
-                                                        </div>
-                                                    {% endfor %}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                {% endfor %}
-                            </div>
+                    <!-- Logo + Text -->
+                    <div class="d-flex flex-column flex-md-row align-items-center gap-3">
+                        <img src="{{ url_for('static', filename='logo.png') }}" alt="Department Logo" width="120">
+                        <div class="text-center text-md-start">
+                            <h4 class="mb-1">Department of Defence</h4>
+                            <small>Online Payslip Portal</small>
                         </div>
                     </div>
 
-                    <!-- Payslip History -->
-<h5 class="mb-3 mt-4">Previously Downloaded Payslips</h5>
-<ul class="list-group mb-4">
-    {% if payslip_history %}
-        {% for payslip in payslip_history|sort(attribute='pay_date', reverse=True) %}
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                <span>{{ payslip.pay_date }}</span>
-                <div class="d-flex gap-2">
-                    <!-- Download Button -->
-                    <a href="{{ url_for('download_payslip', filename=payslip.filename) }}" 
-                       class="btn btn-outline-success btn-sm">Download</a>
-
-                    <!-- Delete Button -->
-                    <form method="POST" action="{{ url_for('delete_payslip', filename=payslip.filename) }}" style="display:inline-block;">
-                        <button type="submit" class="btn btn-outline-danger btn-sm" 
-                                onclick="return confirm('Are you sure you want to delete this payslip?');">
-                            Delete
-                        </button>
-                    </form>
-                </div>
-            </li>
-        {% endfor %}
-    {% else %}
-        <li class="list-group-item text-center text-muted">No previously downloaded payslips.</li>
-    {% endif %}
-</ul>
-
-
-                    <!-- Quick Links -->
-                    <div class="d-flex justify-content-between mb-3">
-                        <a href="{{ url_for('change_password') }}" class="btn btn-outline-warning btn-sm">Change Password</a>
-                        <a href="{{ url_for('contact_hr') }}" class="btn btn-outline-info btn-sm">Contact HR</a>
-                    </div>
-
-                    <!-- Logout -->
-                    <div class="text-center mt-3">
-                        <a href="{{ url_for('logout') }}" class="text-decoration-none text-danger">Logout</a>
-                    </div>
-
+                    <!-- Hamburger button (mobile only) -->
+                    <button class="btn btn-outline-light d-md-none position-absolute top-50 end-0 translate-middle-y me-3"
+                            type="button" data-bs-toggle="collapse" data-bs-target="#mobileTabs"
+                            aria-expanded="false" aria-controls="mobileTabs">
+                        <i class="bi bi-list fs-3"></i>
+                    </button>
                 </div>
 
-                <!-- Card Footer -->
+                <!-- Mobile Tabs (collapse) -->
+                <div class="collapse d-md-none bg-light" id="mobileTabs">
+                    <ul class="nav nav-pills flex-column p-3" id="mobilePortalTabs" role="tablist">
+                        <li class="nav-item mb-2" role="presentation">
+                            <button class="nav-link active d-flex align-items-center gap-2" id="mobile-profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab">
+                                <i class="bi bi-person-circle"></i> Profile
+                            </button>
+                        </li>
+                        <li class="nav-item mb-2" role="presentation">
+                            <button class="nav-link d-flex align-items-center gap-2" id="mobile-dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard" type="button" role="tab">
+                                <i class="bi bi-speedometer2"></i> Dashboard
+                            </button>
+                        </li>
+                        <li class="nav-item mb-2" role="presentation">
+                            <button class="nav-link d-flex align-items-center gap-2" id="mobile-settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button" role="tab">
+                                <i class="bi bi-gear"></i> Settings
+                            </button>
+                        </li>
+                        <li class="nav-item mb-2" role="presentation">
+                            <button class="nav-link d-flex align-items-center gap-2" id="mobile-history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab">
+                                <i class="bi bi-clock-history"></i> History
+                            </button>
+                        </li>
+                        <li class="nav-item mb-2" role="presentation">
+                            <button class="nav-link d-flex align-items-center gap-2" id="mobile-enquiry-tab" data-bs-toggle="tab" data-bs-target="#enquiry" type="button" role="tab">
+                                <i class="bi bi-envelope"></i> Enquiry
+                            </button>
+                        </li>
+                        <li class="mt-3">
+                            <a href="{{ url_for('logout') }}" class="btn btn-outline-danger btn-sm rounded-pill w-100">Logout</a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Body with Sidebar + Content -->
+                <div class="row g-0">
+
+                    <!-- Sidebar Tabs (desktop only) -->
+                    <div class="col-12 col-md-3 bg-light border-end d-none d-md-flex flex-column p-3">
+                        <ul class="nav nav-pills flex-column mb-auto" id="portalTabs" role="tablist">
+                            <li class="nav-item mb-2" role="presentation">
+                                <button class="nav-link active d-flex align-items-center gap-2" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab">
+                                    <i class="bi bi-person-circle"></i> Profile
+                                </button>
+                            </li>
+                            <li class="nav-item mb-2" role="presentation">
+                                <button class="nav-link d-flex align-items-center gap-2" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard" type="button" role="tab">
+                                    <i class="bi bi-speedometer2"></i> Dashboard
+                                </button>
+                            </li>
+                            <li class="nav-item mb-2" role="presentation">
+                                <button class="nav-link d-flex align-items-center gap-2" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button" role="tab">
+                                    <i class="bi bi-gear"></i> Settings
+                                </button>
+                            </li>
+                            <li class="nav-item mb-2" role="presentation">
+                                <button class="nav-link d-flex align-items-center gap-2" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab">
+                                    <i class="bi bi-clock-history"></i> History
+                                </button>
+                            </li>
+                            <li class="nav-item mb-2" role="presentation">
+                                <button class="nav-link d-flex align-items-center gap-2" id="enquiry-tab" data-bs-toggle="tab" data-bs-target="#enquiry" type="button" role="tab">
+                                    <i class="bi bi-envelope"></i> Enquiry
+                                </button>
+                            </li>
+                        </ul>
+
+                        <div class="mt-auto text-center">
+                            <a href="{{ url_for('logout') }}" class="btn btn-outline-danger btn-sm rounded-pill w-100">Logout</a>
+                        </div>
+                    </div>
+
+                    <!-- Tab Content -->
+                    <div class="col-12 col-md-9 p-3 p-md-4 tab-content">
+
+                        <!-- Profile -->
+                        <div class="tab-pane fade show active text-center" id="profile" role="tabpanel">
+                            <div class="mb-3">
+                                <h5 class="fw-bold">Welcome, {{ username }}</h5>
+                                <p class="text-muted mb-1">Employee Number: <strong>{{ employee_number }}</strong></p>
+                                <p class="text-muted mb-1">Department: <strong>{{ department or "N/A" }}</strong></p>
+                            </div>
+                            <div class="p-3 bg-light rounded-3 shadow-sm">
+                                <p class="mb-0">Use the sidebar to download payslips, update settings, view history, or contact HR.</p>
+                            </div>
+                        </div>
+
+                        <!-- Dashboard -->
+                        <div class="tab-pane fade" id="dashboard" role="tabpanel">
+                            <button class="btn btn-success w-100 py-2 shadow-sm rounded-pill mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#downloadPayslip" aria-expanded="false">
+                                Select Your Payslip
+                            </button>
+                            <div class="collapse" id="downloadPayslip">
+                                <div class="accordion" id="payslipAccordion">
+                                    {% set years = {} %}
+                                    {% for period in pay_periods %}
+                                        {% set year = period.pay_date.split('-')[-1] %}
+                                        {% if year not in years %}
+                                            {% set years = years.update({year: []}) or years %}
+                                        {% endif %}
+                                        {% set _ = years[year].append(period) %}
+                                    {% endfor %}
+
+                                    {% for year, periods in years.items() %}
+                                        <div class="accordion-item rounded-3 mb-2 shadow-sm border-0">
+                                            <h2 class="accordion-header" id="heading{{ year }}">
+                                                <button class="accordion-button collapsed rounded-3 bg-light fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ year }}">
+                                                    {{ year }}
+                                                </button>
+                                            </h2>
+                                            <div id="collapse{{ year }}" class="accordion-collapse collapse" data-bs-parent="#payslipAccordion">
+                                                <div class="accordion-body">
+                                                    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-2">
+                                                        {% set months = {} %}
+                                                        {% for period in periods %}
+                                                            {% set month = period.pay_date.split('-')[1] %}
+                                                            {% if month not in months %}
+                                                                {% set months = months.update({month: []}) or months %}
+                                                            {% endif %}
+                                                            {% set _ = months[month].append(period) %}
+                                                        {% endfor %}
+
+                                                        {% for month, month_periods in months.items() %}
+                                                            <div class="col-12 mb-2">
+                                                                <strong>{{ month }}</strong>
+                                                                <div class="d-flex flex-wrap gap-2 mt-1">
+                                                                    {% for p in month_periods %}
+                                                                        <form method="POST" style="display:inline-block;">
+                                                                            <button type="submit" name="pay_date" value="{{ p.pay_date }}"
+                                                                                class="btn btn-sm {% if not p.available %}btn-outline-secondary disabled{% else %}btn-success{% endif %} rounded-pill"
+                                                                                {% if not p.available %}title="Not available yet"{% endif %}>
+                                                                                {{ p.pay_date }}
+                                                                                {% if not p.available %}
+                                                                                    <span class="badge bg-secondary ms-1">Coming Soon</span>
+                                                                                {% endif %}
+                                                                            </button>
+                                                                        </form>
+                                                                    {% endfor %}
+                                                                </div>
+                                                            </div>
+                                                        {% endfor %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Settings -->
+                        <div class="tab-pane fade" id="settings" role="tabpanel">
+                            <h5 class="mb-3 fw-bold">Change Password</h5>
+                            <form method="POST" action="{{ url_for('change_password') }}">
+                                <div class="mb-3">
+                                    <label class="form-label">Current Password</label>
+                                    <input type="password" name="current_password" class="form-control rounded-pill" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">New Password</label>
+                                    <input type="password" name="new_password" class="form-control rounded-pill" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Confirm New Password</label>
+                                    <input type="password" name="confirm_password" class="form-control rounded-pill" required>
+                                </div>
+                                <button type="submit" class="btn btn-success rounded-pill px-4">Update Password</button>
+                            </form>
+                        </div>
+
+                        <!-- History -->
+                        <div class="tab-pane fade" id="history" role="tabpanel">
+                            <h5 class="mb-3 fw-bold">Previously Downloaded Payslips</h5>
+                            <ul class="list-group">
+                                {% if payslip_history %}
+                                    {% for payslip in payslip_history|sort(attribute='pay_date', reverse=True) %}
+                                        <li class="list-group-item d-flex justify-content-between align-items-center rounded-3 mb-2 shadow-sm">
+                                            <span>{{ payslip.pay_date }}</span>
+                                            <div class="d-flex gap-2">
+                                                <a href="{{ url_for('download_payslip', filename=payslip.filename) }}" class="btn btn-outline-success btn-sm rounded-pill">Download</a>
+                                                <form method="POST" action="{{ url_for('delete_payslip', filename=payslip.filename) }}" style="display:inline-block;">
+                                                    <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill" onclick="return confirm('Are you sure?');">Delete</button>
+                                                </form>
+                                            </div>
+                                        </li>
+                                    {% endfor %}
+                                {% else %}
+                                    <li class="list-group-item text-center text-muted rounded-3 shadow-sm">No previously downloaded payslips.</li>
+                                {% endif %}
+                            </ul>
+                        </div>
+
+                        <!-- Enquiry -->
+                        <div class="tab-pane fade" id="enquiry" role="tabpanel">
+                            <h5 class="mb-3 fw-bold">Contact HR</h5>
+                            <p>For enquiries, reach out to HR via the internal contact system or email.</p>
+                            <a href="{{ url_for('contact_hr') }}" class="btn btn-info btn-sm rounded-pill">Contact HR</a>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Footer -->
                 <div class="card-footer text-center text-muted bg-light">
                     &copy; 2026 Department of Defence
                 </div>
@@ -140,5 +240,30 @@
     </div>
 </div>
 
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // Close mobile collapse when clicking outside
+    document.addEventListener('click', function(event) {
+        const mobileMenu = document.getElementById('mobileTabs');
+        const toggleBtn = document.querySelector('[data-bs-target="#mobileTabs"]');
+        const bsCollapse = bootstrap.Collapse.getOrCreateInstance(mobileMenu);
+
+        if (!mobileMenu.contains(event.target) && !toggleBtn.contains(event.target)) {
+            bsCollapse.hide();
+        }
+    });
+
+    // Close mobile menu when a tab is selected
+    const mobileTabs = document.querySelectorAll('#mobilePortalTabs button[data-bs-toggle="tab"]');
+    mobileTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const mobileMenu = document.getElementById('mobileTabs');
+            bootstrap.Collapse.getOrCreateInstance(mobileMenu).hide();
+        });
+    });
+</script>
+
 {% endblock %}
