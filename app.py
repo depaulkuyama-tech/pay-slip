@@ -10,6 +10,21 @@ from datetime import datetime, timedelta
 app = Flask(__name__)
 app.config.from_object(Config)
 
+import shutil
+
+if app.config["ON_RENDER"]:
+    repo_pdf_dir = os.path.join(app.config["BASE_DIR"], "Master_PDFs")
+    tmp_pdf_dir = app.config["MASTER_PDF_DIR"]
+
+    if os.path.exists(repo_pdf_dir):
+        for f in os.listdir(repo_pdf_dir):
+            src = os.path.join(repo_pdf_dir, f)
+            dst = os.path.join(tmp_pdf_dir, f)
+            if os.path.isfile(src) and not os.path.exists(dst):
+                shutil.copy2(src, dst)
+
+
+
 # Ensure directories exist
 os.makedirs(app.config["MASTER_PDF_DIR"], exist_ok=True)
 os.makedirs(app.config["OUTPUT_DIR"], exist_ok=True)
