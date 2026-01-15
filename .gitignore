@@ -1,7 +1,23 @@
+# Environment variables
 .env
+
+# Database files
 *.db
+
+# Python cache
 __pycache__/
-Backup/
+*.pyc
+
+# User uploads & generated files
+static/uploads/
 output/
 pdfs/
 Master_PDFs/
+
+# Backup & temp files
+Backup/
+* - Copy.html
+
+# OS files
+.DS_Store
+Thumbs.db
