@@ -5,6 +5,7 @@ from config import Config
 import sqlite3
 import os
 from datetime import datetime, timedelta
+from calendar import month_name
 
 # ------------------ FLASK APP ------------------
 app = Flask(__name__)
@@ -173,12 +174,14 @@ def logout():
     return redirect(url_for("login"))
 
 # ---------- PORTAL ----------
+# ---------- PORTAL ----------
 @app.route("/portal", methods=["GET", "POST"])
 def portal():
     if "user" not in session:
         flash("Please login first!", "warning")
         return redirect(url_for("login"))
 
+    # ------------------ Fetch user info ------------------
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute("SELECT employee_number, department FROM users WHERE username=?", (session["user"],))
@@ -191,10 +194,16 @@ def portal():
 
     employee_number_db, department = user_data
 
-    # Generate all pay periods from July 2025
+    # ------------------ Generate pay periods ------------------
     pay_periods = generate_pay_periods(start_date="24-07-2025", num_periods=26)
 
-    # Handle POST: extract and download selected payslip
+    # Add month_name and year to each period
+    for period in pay_periods:
+        dt = datetime.strptime(period["pay_date"], "%d-%b-%Y")
+        period["month_name"] = month_name[dt.month]
+        period["year"] = dt.year
+
+    # ------------------ Handle POST: extract & download ------------------
     if request.method == "POST":
         selected_date = request.form.get("pay_date")
         if selected_date:
@@ -206,19 +215,43 @@ def portal():
             flash("Selected payslip is not available.", "danger")
         return redirect(url_for("portal"))
 
-    # Build history of already extracted files
+    # ------------------ Build pay_periods_by_year for template ------------------
+    from collections import defaultdict
+
+    pay_periods_by_year = defaultdict(lambda: defaultdict(list))
+    for period in pay_periods:
+        pay_periods_by_year[period["year"]][period["month_name"]].append(period)
+
+    # Sort years descending
+    pay_periods_by_year = dict(sorted(pay_periods_by_year.items(), reverse=True))
+
+    # Sort months within each year (optional, Jan → Dec)
+    for year in pay_periods_by_year:
+        months_ordered = dict(sorted(
+            pay_periods_by_year[year].items(),
+            key=lambda x: datetime.strptime(x[0], "%B").month
+        ))
+        pay_periods_by_year[year] = months_ordered
+
+    # ------------------ Build history of already extracted files ------------------
     extracted_files = []
     for f in os.listdir(OUTPUT_DIR):
         if f.startswith(f"employee_{employee_number_db}_") and f.endswith(".pdf"):
             pay_date = f.replace(f"employee_{employee_number_db}_", "").replace(".pdf", "")
             extracted_files.append({"pay_date": pay_date, "filename": f})
 
-    return render_template("index.html",
-                           username=session["user"],
-                           employee_number=employee_number_db,
-                           department=department,
-                           pay_periods=pay_periods,
-                           payslip_history=extracted_files)
+    # Sort history by most recent first
+    extracted_files.sort(key=lambda x: datetime.strptime(x["pay_date"], "%d-%b-%Y"), reverse=True)
+
+    # ------------------ Render template ------------------
+    return render_template(
+        "index.html",
+        username=session["user"],
+        employee_number=employee_number_db,
+        department=department,
+        pay_periods_by_year=pay_periods_by_year,  # now passed correctly
+        payslip_history=extracted_files
+    )
 
 # ---------- DOWNLOAD PAYSLIP ----------
 @app.route("/download/<filename>")
@@ -308,6 +341,85 @@ def terms():
 @app.route("/contact-hr")
 def contact_hr():
     return render_template("contact_hr.html")
+
+
+
+# ---------- Routes to the Settings Tab ----------
+
+
+
+@app.route("/security/2fa")
+def manage_2fa():
+    return "2FA management coming soon"
+
+@app.route("/security/alerts", methods=["POST"])
+def update_security_alerts():
+    # Save preferences later
+    return redirect(url_for("portal"))
+
+@app.route("/security/sessions/terminate/<int:id>", methods=["POST"])
+def terminate_session(id):
+    return redirect(url_for("portal"))
+
+@app.route("/security/logout-all-sessions")
+def logout_all_sessions():
+    return redirect(url_for("logout"))
+
+@app.route("/security/account/lock")
+def lock_account():
+    return "Account lock requested"
+
+@app.route("/security/account/delete")
+def request_account_deletion():
+    return "Account deletion requested"
+
+
+
+# ---------- Routes to Upload Avatar ----------
+
+@app.route("/upload-avatar", methods=["POST"])
+def upload_avatar():
+    if "user" not in session:
+        flash("Please login first!", "warning")
+        return redirect(url_for("login"))
+
+    if "avatar" not in request.files:
+        flash("No file selected.", "danger")
+        return redirect(url_for("portal"))
+
+    file = request.files["avatar"]
+    if file.filename == "":
+        flash("No file selected.", "danger")
+        return redirect(url_for("portal"))
+
+    if file:
+        ext = os.path.splitext(file.filename)[1].lower()
+        if ext not in [".png", ".jpg", ".jpeg"]:
+            flash("Only PNG and JPG files are allowed.", "danger")
+            return redirect(url_for("portal"))
+
+        avatar_dir = os.path.join(app.static_folder, "uploads", "avatars")
+        os.makedirs(avatar_dir, exist_ok=True)
+        filename = f"{session['user']}{ext}"
+        filepath = os.path.join(avatar_dir, filename)
+        file.save(filepath)
+
+        # Optional: save filename in DB
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        c.execute("UPDATE users SET avatar=? WHERE username=?", (filename, session["user"]))
+        conn.commit()
+        conn.close()
+
+        flash("Profile picture updated!", "success")
+
+    return redirect(url_for("portal"))
+
+
+
+
+
+
 
 # ------------------ RUN ------------------
 if __name__ == "__main__":

@@ -8,8 +8,11 @@
 
             <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
 
+            <!-- Scrollable Card Body -->
+            <div class="card-body-scroll">     
+
                 <!-- Header with Logo + Mobile Hamburger -->
-                <div class="card-header bg-success text-white py-4 rounded-top d-flex flex-column flex-md-row justify-content-center align-items-center gap-3 position-relative">
+                <div class="card-header bg-success text-white py-4 rounded-top d-flex flex-column flex-md-row justify-content-center align-items-center gap-3 position-relative sticky-header">
 
                     <!-- Logo + Text -->
                     <div class="d-flex flex-column flex-md-row align-items-center gap-3">
@@ -28,6 +31,9 @@
                     </button>
                 </div>
 
+                
+                    
+                 
                 <!-- Mobile Tabs (collapse) -->
                 <div class="collapse d-md-none bg-light" id="mobileTabs">
                     <ul class="nav nav-pills flex-column p-3" id="mobilePortalTabs" role="tablist">
@@ -104,99 +110,430 @@
                     <div class="col-12 col-md-9 p-3 p-md-4 tab-content">
 
                         <!-- Profile -->
-                        <div class="tab-pane fade show active text-center" id="profile" role="tabpanel">
-                            <div class="mb-3">
-                                <h5 class="fw-bold">Welcome, {{ username }}</h5>
-                                <p class="text-muted mb-1">Employee Number: <strong>{{ employee_number }}</strong></p>
-                                <p class="text-muted mb-1">Department: <strong>{{ department or "N/A" }}</strong></p>
-                            </div>
-                            <div class="p-3 bg-light rounded-3 shadow-sm">
-                                <p class="mb-0">Use the sidebar to download payslips, update settings, view history, or contact HR.</p>
-                            </div>
-                        </div>
+    <div class="tab-pane fade show active text-center" id="profile" role="tabpanel">
+
+    <!-- Profile Header Card -->
+    <div class="card mb-4 shadow-sm rounded-4 border-0">
+        <div class="card-body py-4">
+
+            <!-- Welcome Message -->
+            <h4 class="fw-bold mb-1">Welcome, {{ username }}</h4>
+            <p class="text-muted mb-2">Employee Number: <strong>{{ employee_number }}</strong></p>
+            <p class="text-muted mb-3">Department: <strong>{{ department or "N/A" }}</strong></p>
+
+            <!-- Quick Stats -->
+            <div class="d-flex justify-content-center gap-4 mb-3 flex-wrap">
+                <div class="text-center">
+                    <h6 class="fw-semibold mb-0">{{ payslip_history|length }}</h6>
+                    <small class="text-muted">Payslips Downloaded</small>
+                </div>
+                <div class="text-center">
+                    <h6 class="fw-semibold mb-0">--</h6>
+                    <small class="text-muted">Pending Actions</small>
+                </div>
+                <div class="text-center">
+                    <h6 class="fw-semibold mb-0">--</h6>
+                    <small class="text-muted">Security Alerts</small>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-flex justify-content-center gap-3 flex-wrap">
+                <a href="#downloadPayslip" class="btn btn-primary btn-sm shadow-sm rounded-pill" data-bs-toggle="collapse">
+                    Download Payslip
+                </a>
+                <a href="{{ url_for('change_password') }}" class="btn btn-outline-secondary btn-sm shadow-sm rounded-pill">
+                    Change Password
+                </a>
+                <a href="{{ url_for('contact_hr') }}" class="btn btn-outline-info btn-sm shadow-sm rounded-pill">
+                    Contact HR
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Card -->
+    <div class="card p-3 bg-light rounded-4 shadow-sm border-0">
+        <p class="mb-0 text-muted">Use the sidebar or buttons above to download payslips, update your account settings, view history, or contact HR. All your recent activity and notifications will appear here soon.</p>
+    </div>
+
+</div>
+
 
                         <!-- Dashboard -->
-                        <div class="tab-pane fade" id="dashboard" role="tabpanel">
-                            <button class="btn btn-success w-100 py-2 shadow-sm rounded-pill mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#downloadPayslip" aria-expanded="false">
-                                Select Your Payslip
-                            </button>
-                            <div class="collapse" id="downloadPayslip">
-                                <div class="accordion" id="payslipAccordion">
-                                    {% set years = {} %}
-                                    {% for period in pay_periods %}
-                                        {% set year = period.pay_date.split('-')[-1] %}
-                                        {% if year not in years %}
-                                            {% set years = years.update({year: []}) or years %}
-                                        {% endif %}
-                                        {% set _ = years[year].append(period) %}
-                                    {% endfor %}
+<div class="tab-pane fade show active" id="dashboard" role="tabpanel">
 
-                                    {% for year, periods in years.items() %}
-                                        <div class="accordion-item rounded-3 mb-2 shadow-sm border-0">
-                                            <h2 class="accordion-header" id="heading{{ year }}">
-                                                <button class="accordion-button collapsed rounded-3 bg-light fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ year }}">
-                                                    {{ year }}
-                                                </button>
-                                            </h2>
-                                            <div id="collapse{{ year }}" class="accordion-collapse collapse" data-bs-parent="#payslipAccordion">
-                                                <div class="accordion-body">
-                                                    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-2">
-                                                        {% set months = {} %}
-                                                        {% for period in periods %}
-                                                            {% set month = period.pay_date.split('-')[1] %}
-                                                            {% if month not in months %}
-                                                                {% set months = months.update({month: []}) or months %}
-                                                            {% endif %}
-                                                            {% set _ = months[month].append(period) %}
-                                                        {% endfor %}
+    <!-- Recent Downloads -->
+    {% if payslip_history %}
+    <div class="mb-4">
+        <h6 class="fw-semibold">Recent Payslips</h6>
+        <div class="d-flex flex-wrap gap-2">
+            {% for f in payslip_history[:5] %}
+                <a href="{{ url_for('download_payslip', filename=f.filename) }}" 
+                   class="btn btn-sm btn-outline-primary">
+                   {{ f.pay_date }}
+                   <i class="bi bi-download ms-1"></i>
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
 
-                                                        {% for month, month_periods in months.items() %}
-                                                            <div class="col-12 mb-2">
-                                                                <strong>{{ month }}</strong>
-                                                                <div class="d-flex flex-wrap gap-2 mt-1">
-                                                                    {% for p in month_periods %}
-                                                                        <form method="POST" style="display:inline-block;">
-                                                                            <button type="submit" name="pay_date" value="{{ p.pay_date }}"
-                                                                                class="btn btn-sm {% if not p.available %}btn-outline-secondary disabled{% else %}btn-success{% endif %} rounded-pill"
-                                                                                {% if not p.available %}title="Not available yet"{% endif %}>
-                                                                                {{ p.pay_date }}
-                                                                                {% if not p.available %}
-                                                                                    <span class="badge bg-secondary ms-1">Coming Soon</span>
-                                                                                {% endif %}
-                                                                            </button>
-                                                                        </form>
-                                                                    {% endfor %}
-                                                                </div>
-                                                            </div>
-                                                        {% endfor %}
-                                                    </div>
-                                                </div>
-                                            </div>
+    <!-- Search Payslip -->
+    <div class="mb-3">
+        <input type="text" id="payslipSearch" class="form-control" placeholder="Search payslip by date...">
+    </div>
+
+    <!-- Payslip Selector Button -->
+    <button class="btn btn-success w-100 py-2 shadow-sm rounded-pill mb-3" 
+            type="button" data-bs-toggle="collapse" data-bs-target="#downloadPayslip" 
+            aria-expanded="true">
+        Select Your Payslip
+    </button>
+
+    <div class="collapse show" id="downloadPayslip">
+        <div class="accordion accordion-flush" id="payslipAccordion">
+
+            {% for year, months in pay_periods_by_year.items() %}
+            <!-- Year Accordion Item -->
+            <div class="accordion-item mb-2 shadow-sm border-0 rounded-3">
+                <h2 class="accordion-header" id="heading{{ year }}">
+                    <button class="accordion-button {{ 'collapsed' if year != current_year else '' }} bg-light rounded-3 fw-semibold" 
+                            type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ year }}">
+                        {{ year }}
+                    </button>
+                </h2>
+
+                <div id="collapse{{ year }}" class="accordion-collapse collapse {{ 'show' if year == current_year else '' }}" data-bs-parent="#payslipAccordion">
+                    <div class="accordion-body">
+
+                        <!-- Month Cards -->
+                        <div class="row g-3">
+                            {% for month_name, month_periods in months.items() %}
+                                <div class="col-12 col-md-6 col-lg-4 month-card">
+                                    <div class="card rounded-3 shadow-sm p-3 h-100 hover-shadow">
+                                        <h6 class="fw-bold mb-2">{{ month_name }}</h6>
+                                        <div class="d-flex flex-wrap gap-2 overflow-auto py-1">
+                                            {% for p in month_periods %}
+                                                <form method="POST" style="display:inline-block;">
+                                                    <button type="submit" name="pay_date" value="{{ p.pay_date }}"
+                                                        class="btn btn-sm rounded-pill d-flex align-items-center {% if not p.available %}btn-outline-secondary disabled opacity-50{% else %}btn-success{% endif %}"
+                                                        data-bs-toggle="tooltip" 
+                                                        data-bs-placement="top"
+                                                        title="{% if p.available %}Download {{ p.pay_date }}{% else %}Not available yet{% endif %}">
+                                                        {{ p.pay_date }}
+                                                        {% if p.available %}
+                                                            <i class="bi bi-download ms-1"></i>
+                                                        {% else %}
+                                                            <span class="badge bg-warning text-dark ms-1">Coming Soon</span>
+                                                        {% endif %}
+                                                    </button>
+                                                </form>
+                                            {% endfor %}
                                         </div>
-                                    {% endfor %}
+                                    </div>
                                 </div>
-                            </div>
+                            {% endfor %}
                         </div>
 
-                        <!-- Settings -->
-                        <div class="tab-pane fade" id="settings" role="tabpanel">
-                            <h5 class="mb-3 fw-bold">Change Password</h5>
-                            <form method="POST" action="{{ url_for('change_password') }}">
-                                <div class="mb-3">
-                                    <label class="form-label">Current Password</label>
-                                    <input type="password" name="current_password" class="form-control rounded-pill" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">New Password</label>
-                                    <input type="password" name="new_password" class="form-control rounded-pill" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Confirm New Password</label>
-                                    <input type="password" name="confirm_password" class="form-control rounded-pill" required>
-                                </div>
-                                <button type="submit" class="btn btn-success rounded-pill px-4">Update Password</button>
-                            </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+        </div>
+    </div>
+
+</div>
+
+<!-- Optional: Initialize Bootstrap tooltips -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+
+    // Payslip search filter
+    document.getElementById('payslipSearch').addEventListener('input', function() {
+        let filter = this.value.toLowerCase();
+        document.querySelectorAll('.month-card').forEach(card => {
+            card.style.display = card.innerText.toLowerCase().includes(filter) ? '' : 'none';
+        });
+    });
+});
+</script>
+
+<style>
+/* Micro-interaction hover effect */
+.hover-shadow:hover {
+    transform: translateY(-2px);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
+}
+
+/* Horizontal scroll for months if overflow */
+.overflow-auto {
+    overflow-x: auto;
+}
+
+/* Month card hidden when filtered */
+.month-card {
+    transition: all 0.2s ease;
+}
+</style>
+
+
+
+
+                        
+                        <!-- Settings / Security -->
+
+
+<div class="tab-pane fade" id="settings" role="tabpanel">
+    <h5 class="mb-4 fw-bold">
+        <i class="bi bi-shield-lock me-2"></i>Security Settings
+    </h5>
+
+    <div class="accordion" id="securityAccordion">
+
+        <!-- 1. Password & Authentication -->
+        <div class="accordion-item mb-3 rounded-3 shadow-sm">
+            <h2 class="accordion-header">
+                <button class="accordion-button fw-semibold" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#passwordSecurity">
+                    <i class="bi bi-key me-2"></i>Password & Authentication
+                </button>
+            </h2>
+            <div id="passwordSecurity" class="accordion-collapse collapse show"
+                    data-bs-parent="#securityAccordion">
+                <div class="accordion-body">
+
+                    <form method="POST" action="{{ url_for('change_password') }}">
+                        <div class="mb-3">
+                            <label class="form-label">Current Password</label>
+                            <input type="password" name="current_password"
+                                   class="form-control rounded-pill" required>
                         </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">New Password</label>
+                            <input type="password" name="new_password"
+                                   class="form-control rounded-pill" required>
+                            <small class="text-muted">
+                                Minimum 8 characters, include numbers & symbols
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Confirm New Password</label>
+                            <input type="password" name="confirm_password"
+                                   class="form-control rounded-pill" required>
+                        </div>
+
+                        <button type="submit"
+                                class="btn btn-success rounded-pill px-4">
+                            Update Password
+                        </button>
+                    </form>
+
+                    <hr>
+
+                    <p class="mb-1 text-muted">
+                        <i class="bi bi-clock-history me-1"></i>
+                        Last changed: <strong>{{ password_last_changed or "Unknown" }}</strong>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Two-Factor Authentication -->
+        <div class="accordion-item mb-3 rounded-3 shadow-sm">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed fw-semibold" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#twoFactor">
+                    <i class="bi bi-shield-check me-2"></i>Two-Factor Authentication (2FA)
+                </button>
+            </h2>
+            <div id="twoFactor" class="accordion-collapse collapse"
+                        data-bs-parent="#securityAccordion">
+                <div class="accordion-body">
+
+                    <p class="mb-2">
+                        Add an extra layer of security to your account.
+                    </p>
+
+                    <p>
+                        Status:
+                        {% if two_factor_enabled %}
+                            <span class="badge bg-success">Enabled</span>
+                        {% else %}
+                            <span class="badge bg-danger">Disabled</span>
+                        {% endif %}
+                    </p>
+
+                  <a href="#" class="btn btn-outline-success btn-sm rounded-pill disabled">
+
+                       class="btn btn-outline-success btn-sm rounded-pill">
+                        Manage 2FA
+                    </a>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Login Activity -->
+        <div class="accordion-item mb-3 rounded-3 shadow-sm">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed fw-semibold" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#loginActivity">
+                    <i class="bi bi-activity me-2"></i>Login Activity
+                </button>
+            </h2>
+            <div id="loginActivity" class="accordion-collapse collapse"
+                        data-bs-parent="#securityAccordion">
+                <div class="accordion-body">
+
+                    <ul class="list-group">
+                        {% for login in recent_logins %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>
+                                    {{ login.timestamp }}<br>
+                                    <small class="text-muted">
+                                        {{ login.device }} · {{ login.ip_address }}
+                                    </small>
+                                </span>
+                                {% if login.success %}
+                                    <span class="badge bg-success">Success</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Failed</span>
+                                {% endif %}
+                            </li>
+                        {% else %}
+                            <li class="list-group-item text-muted text-center">
+                                No login activity available
+                            </li>
+                        {% endfor %}
+                    </ul>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Devices & Sessions -->
+        <div class="accordion-item mb-3 rounded-3 shadow-sm">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed fw-semibold" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#sessions">
+                    <i class="bi bi-laptop me-2"></i>Devices & Sessions
+                </button>
+            </h2>
+            <div id="sessions" class="accordion-collapse collapse"
+                        data-bs-parent="#securityAccordion">
+                <div class="accordion-body">
+
+                    <p class="mb-2">You are currently logged in on:</p>
+
+                    <ul class="list-group mb-3">
+                        {% for session in active_sessions %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                {{ session.device }} · {{ session.last_active }}
+                                <form method="POST"
+                                      action="{{ url_for('terminate_session', id=session.id) }}">
+                                    <button class="btn btn-outline-danger btn-sm rounded-pill">
+                                        Logout
+                                    </button>
+                                </form>
+                            </li>
+                        {% else %}
+                            <li class="list-group-item text-muted text-center">
+                                No active sessions
+                            </li>
+                        {% endfor %}
+                    </ul>
+
+                    <a href="{{ url_for('logout_all_sessions') }}"
+                       class="btn btn-danger btn-sm rounded-pill">
+                        Logout All Sessions
+                    </a>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. Security Alerts -->
+        <div class="accordion-item mb-3 rounded-3 shadow-sm">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed fw-semibold" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#alerts">
+                    <i class="bi bi-bell me-2"></i>Security Alerts
+                </button>
+            </h2>
+            <div id="alerts" class="accordion-collapse collapse"
+                        data-bs-parent="#securityAccordion">
+                <div class="accordion-body">
+
+                    <form method="POST" action="{{ url_for('update_security_alerts') }}">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="login_alerts" checked>
+                            <label class="form-check-label">
+                                Notify me of new logins
+                            </label>
+                        </div>
+
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="password_alerts" checked>
+                            <label class="form-check-label">
+                                Notify me of password changes
+                            </label>
+                        </div>
+
+                        <button class="btn btn-outline-success btn-sm rounded-pill mt-3">
+                            Save Preferences
+                        </button>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. Account Actions -->
+        <div class="accordion-item rounded-3 shadow-sm border-danger">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed fw-semibold text-danger" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#accountActions">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Account Actions
+                </button>
+            </h2>
+            <div id="accountActions" class="accordion-collapse collapse"
+                        data-bs-parent="#securityAccordion">
+                <div class="accordion-body">
+
+                    <p class="text-muted">
+                        These actions affect your account access.
+                    </p>
+
+                    <a href="{{ url_for('lock_account') }}"
+                       class="btn btn-outline-danger btn-sm rounded-pill me-2">
+                        Temporarily Lock Account
+                    </a>
+                    <br>
+                    <br>
+                    <a href="{{ url_for('request_account_deletion') }}"
+                       class="btn btn-danger btn-sm rounded-pill">
+                        Request Account Deletion
+                    </a>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+
 
                         <!-- History -->
                         <div class="tab-pane fade" id="history" role="tabpanel">
@@ -222,10 +559,45 @@
 
                         <!-- Enquiry -->
                         <div class="tab-pane fade" id="enquiry" role="tabpanel">
-                            <h5 class="mb-3 fw-bold">Contact HR</h5>
-                            <p>For enquiries, reach out to HR via the internal contact system or email.</p>
-                            <a href="{{ url_for('contact_hr') }}" class="btn btn-info btn-sm rounded-pill">Contact HR</a>
-                        </div>
+
+    <!-- Contact HR Card -->
+    <div class="card shadow-sm rounded-4 border-0 p-4 mb-4">
+        <div class="d-flex align-items-center mb-3">
+            <div class="bg-info rounded-circle p-3 text-white me-3">
+                <i class="bi bi-people-fill fs-4"></i>
+            </div>
+            <div>
+                <h5 class="fw-bold mb-0">Contact HR</h5>
+                <small class="text-muted">We're here to help you with any enquiries.</small>
+            </div>
+        </div>
+
+        <p class="text-muted mb-4">For enquiries regarding payslips, leave, or other HR matters, reach out directly via this form or email.</p>
+
+        <!-- Quick Contact Form -->
+        <form method="POST" action="{{ url_for('contact_hr') }}">
+            <div class="mb-3">
+                <label for="subject" class="form-label fw-semibold">Subject</label>
+                <input type="text" class="form-control rounded-pill" id="subject" name="subject" placeholder="Enter your enquiry subject" required>
+            </div>
+            <div class="mb-3">
+                <label for="message" class="form-label fw-semibold">Message</label>
+                <textarea class="form-control rounded-3" id="message" name="message" rows="4" placeholder="Type your message here..." required></textarea>
+            </div>
+            <div class="d-flex justify-content-end">
+                <button type="submit" class="btn btn-info rounded-pill shadow-sm">
+                    <i class="bi bi-envelope-fill me-1"></i> Send Enquiry
+                </button>
+            </div>
+        </form>
+
+        <div class="mt-3 text-center">
+            <small class="text-muted">Or reach us via email: <a href="mailto:hr@example.com">hr@example.com</a></small>
+        </div>
+    </div>
+
+</div>
+
 
                     </div>
                 </div>
@@ -234,6 +606,8 @@
                 <div class="card-footer text-center text-muted bg-light">
                     &copy; 2026 Department of Defence
                 </div>
+            </div>
+
             </div>
 
         </div>
