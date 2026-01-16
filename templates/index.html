@@ -170,7 +170,8 @@
         <div class="d-flex flex-wrap gap-2">
             {% for f in payslip_history[:5] %}
                 <a href="{{ url_for('download_payslip', filename=f.filename) }}" 
-                   class="btn btn-sm btn-outline-primary">
+                   class="btn btn-sm btn-outline-primary"
+                   onclick="showDownloadModal()">
                    {{ f.pay_date }}
                    <i class="bi bi-download ms-1"></i>
                 </a>
@@ -215,7 +216,7 @@
                                         <h6 class="fw-bold mb-2">{{ month_name }}</h6>
                                         <div class="d-flex flex-wrap gap-2 overflow-auto py-1">
                                             {% for p in month_periods %}
-                                                <form method="POST" style="display:inline-block;">
+                                                <form method="POST" onsubmit="showDownloadModal()" style="display:inline-block;">
                                                     <button type="submit" name="pay_date" value="{{ p.pay_date }}"
                                                         class="btn btn-sm rounded-pill d-flex align-items-center {% if not p.available %}btn-outline-secondary disabled opacity-50{% else %}btn-success{% endif %}"
                                                         data-bs-toggle="tooltip" 
@@ -544,7 +545,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                         <li class="list-group-item d-flex justify-content-between align-items-center rounded-3 mb-2 shadow-sm">
                                             <span>{{ payslip.pay_date }}</span>
                                             <div class="d-flex gap-2">
-                                                <a href="{{ url_for('download_payslip', filename=payslip.filename) }}" class="btn btn-outline-success btn-sm rounded-pill">Download</a>
+                                                <a href="{{ url_for('download_payslip', filename=payslip.filename) }}" class="btn btn-outline-success btn-sm rounded-pill" onclick="showDownloadModal()">Download</a>
                                                 <form method="POST" action="{{ url_for('delete_payslip', filename=payslip.filename) }}" style="display:inline-block;">
                                                     <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill" onclick="return confirm('Are you sure?');">Delete</button>
                                                 </form>
@@ -619,10 +620,19 @@ document.addEventListener('DOMContentLoaded', function () {
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    /* ===============================
+       MOBILE MENU BEHAVIOUR
+    =============================== */
+
     // Close mobile collapse when clicking outside
     document.addEventListener('click', function(event) {
         const mobileMenu = document.getElementById('mobileTabs');
         const toggleBtn = document.querySelector('[data-bs-target="#mobileTabs"]');
+
+        if (!mobileMenu || !toggleBtn) return;
+
         const bsCollapse = bootstrap.Collapse.getOrCreateInstance(mobileMenu);
 
         if (!mobileMenu.contains(event.target) && !toggleBtn.contains(event.target)) {
@@ -635,9 +645,61 @@ document.addEventListener('DOMContentLoaded', function () {
     mobileTabs.forEach(tab => {
         tab.addEventListener('click', () => {
             const mobileMenu = document.getElementById('mobileTabs');
-            bootstrap.Collapse.getOrCreateInstance(mobileMenu).hide();
+            if (mobileMenu) {
+                bootstrap.Collapse.getOrCreateInstance(mobileMenu).hide();
+            }
         });
     });
+
+});
+
+
+/* ===============================
+   DOWNLOAD MODAL HANDLER
+=============================== */
+
+function showDownloadModal() {
+    const modalEl = document.getElementById('downloadModal');
+    if (!modalEl) return;
+
+    const modal = new bootstrap.Modal(modalEl, {
+        backdrop: 'static',
+        keyboard: false
+    });
+
+    modal.show();
+
+    // Auto-close once download has likely started
+    setTimeout(() => {
+        modal.hide();
+    }, 4000);
+}
 </script>
+
+
+
+<!-- Download Progress Modal -->
+<div class="modal fade" id="downloadModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 shadow">
+            <div class="modal-body text-center p-4">
+                <i class="bi bi-file-earmark-arrow-down fs-1 text-success mb-3"></i>
+                <h5 class="fw-semibold">Please wait</h5>
+                <p class="text-muted mb-3">
+                    Your Pay Slip is being prepared for download…
+                </p>
+
+                <div class="progress">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-success"
+                         role="progressbar"
+                         style="width: 100%">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 
 {% endblock %}
